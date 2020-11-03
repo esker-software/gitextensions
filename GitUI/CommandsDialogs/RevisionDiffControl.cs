@@ -765,7 +765,31 @@ namespace GitUI.CommandsDialogs
             }
 
             var fileName = _fullPathResolver.Resolve(DiffFiles.SelectedItem.Item.Name);
-            UICommands.StartFileEditorDialog(fileName);
+            if (AppSettings.OpenGitEditorInsteadOfDialog)
+            {
+                ThreadHelper.JoinableTaskFactory.RunAsync(async () =>
+                {
+                    string editor = await Module.GetCustomEditor();
+                    string args = string.Empty;
+                    editor = editor.Replace("\"", "");
+                    editor = editor.Replace("\n", " ");
+                    string extension = ".exe";
+                    var exeIndex = editor.IndexOf(extension);
+                    if (exeIndex != -1)
+                    {
+                        args = editor.Substring(exeIndex + extension.Length);
+                        editor = editor.Substring(0, exeIndex + extension.Length);
+                    }
+
+                    args += fileName;
+                    Process.Start(editor, args);
+                }).FileAndForget();
+            }
+            else
+            {
+                UICommands.StartFileEditorDialog(fileName);
+            }
+
             RefreshArtificial();
         }
 
