@@ -714,6 +714,12 @@ namespace GitCommands
             set => SetBool("opensubmodulediffinseparatewindow", value);
         }
 
+        public static bool OpenDiffToolOnDoubleClick
+        {
+            get => GetBool("opendifftoolondoubleclick", false);
+            set => SetBool("opendifftoolondoubleclick", value);
+        }
+
         public static bool RevisionGraphShowWorkingDirChanges
         {
             get => GetBool("revisiongraphshowworkingdirchanges", true);

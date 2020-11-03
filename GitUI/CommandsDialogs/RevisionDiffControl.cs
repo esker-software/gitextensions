@@ -463,6 +463,29 @@ namespace GitUI.CommandsDialogs
                         process.Start();
                     });
             }
+            else if (AppSettings.OpenDiffToolOnDoubleClick)
+            {
+                RevisionDiffKind GetDiffKind()
+                {
+                    if (Equals(sender, firstToLocalToolStripMenuItem))
+                    {
+                        return RevisionDiffKind.DiffALocal;
+                    }
+                    else if (sender == selectedToLocalToolStripMenuItem)
+                    {
+                        return RevisionDiffKind.DiffBLocal;
+                    }
+                    else
+                    {
+                        Debug.Assert(sender == firstToSelectedToolStripMenuItem, "Not implemented DiffWithRevisionKind: " + sender);
+                        return RevisionDiffKind.DiffAB;
+                    }
+                }
+
+                var diffKind = GetDiffKind();
+                var revs = new[] { item.SecondRevision, item.FirstRevision };
+                UICommands.OpenWithDifftool(this, revs, item.Item.Name, item.Item.OldName, diffKind, item.Item.IsTracked);
+            }
             else
             {
                 UICommands.StartFileHistoryDialog(this, item.Item.Name, item.SecondRevision);
