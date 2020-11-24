@@ -335,6 +335,8 @@ namespace GitUI.CommandsDialogs
             bool isAnyTracked = selectedItems.Any(item => item.Item.IsTracked);
             bool isAnyIndex = selectedItems.Any(item => item.Item.Staged == StagedStatus.Index);
             bool isAnyWorkTree = selectedItems.Any(item => item.Item.Staged == StagedStatus.WorkTree);
+            bool supportPatches = selectedGitItemCount == 1 && DiffText.HasAnyPatches();
+            bool isDeleted = selectedItems.Any(item => item.Item.IsDeleted);
             bool isAnySubmodule = selectedItems.Any(item => item.Item.IsSubmodule);
             (bool allFilesExist, bool allFilesOrUntrackedDirectoriesExist) = FileOrUntrackedDirExists(selectedItems, _fullPathResolver);
 
@@ -349,6 +351,8 @@ namespace GitUI.CommandsDialogs
                 allFilesExist: allFilesExist,
                 allFilesOrUntrackedDirectoriesExist: allFilesOrUntrackedDirectoriesExist,
                 isAnyTracked: isAnyTracked,
+                supportPatches: supportPatches,
+                isDeleted: isDeleted,
                 isAnySubmodule: isAnySubmodule);
             return selectionInfo;
 
@@ -560,7 +564,7 @@ namespace GitUI.CommandsDialogs
             foreach (var item in DiffFiles.SelectedItems)
             {
                 string filePath = _fullPathResolver.Resolve(item.Item.Name);
-                if (FormBrowseUtil.FileOrParentDirectoryExists(filePath))
+                if (filePath != null && FormBrowseUtil.FileOrParentDirectoryExists(filePath))
                 {
                     openContainingFolderToolStripMenuItem.Enabled = true;
                     break;
@@ -1026,8 +1030,7 @@ namespace GitUI.CommandsDialogs
                 foreach (var item in items)
                 {
                     var path = _fullPathResolver.Resolve(item.Item.Name);
-                    bool isDir = (File.GetAttributes(path) & FileAttributes.Directory) == FileAttributes.Directory;
-                    if (isDir)
+                    if (Directory.Exists(path))
                     {
                         Directory.Delete(path, recursive: true);
                     }

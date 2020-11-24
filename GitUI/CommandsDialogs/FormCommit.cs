@@ -2598,6 +2598,12 @@ namespace GitUI.CommandsDialogs
             var fileNames = new StringBuilder();
             foreach (var item in list.SelectedItems)
             {
+                var fileName = _fullPathResolver.Resolve(item.Item.Name);
+                if (string.IsNullOrWhiteSpace(fileName))
+                {
+                    continue;
+                }
+
                 // Only use append line when multiple items are selected.
                 // This to make it easier to use the text from clipboard when 1 file is selected.
                 if (fileNames.Length > 0)
@@ -2605,27 +2611,24 @@ namespace GitUI.CommandsDialogs
                     fileNames.AppendLine();
                 }
 
-                fileNames.Append(_fullPathResolver.Resolve(item.Item.Name).ToNativePath());
+                fileNames.Append(fileName.ToNativePath());
             }
 
             ClipboardUtil.TrySetText(fileNames.ToString());
         }
 
-        private void OpenFilesWithDiffTool(IEnumerable<GitItemStatus> items, string firstRevision, string secondRevision)
+        private void OpenFilesWithDiffTool(IEnumerable<FileStatusItem> items)
         {
             foreach (var item in items)
             {
-                string output = Module.OpenWithDifftool(item.Name, firstRevision: firstRevision, secondRevision: secondRevision, isTracked: item.IsTracked);
-                if (!string.IsNullOrEmpty(output))
-                {
-                    MessageBox.Show(this, output, Strings.Error, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                }
+                GitRevision[] revs = new[] { item.SecondRevision, item.FirstRevision };
+                UICommands.OpenWithDifftool(this, revs, item.Item.Name, item.Item.OldName, RevisionDiffKind.DiffAB, item.Item.IsTracked);
             }
         }
 
         private void OpenWithDifftoolToolStripMenuItemClick(object sender, EventArgs e)
         {
-            OpenFilesWithDiffTool(Unstaged.SelectedItems.Items(), GitRevision.IndexGuid, GitRevision.WorkTreeGuid);
+            OpenFilesWithDiffTool(Unstaged.SelectedItems);
         }
 
         private void OpenWithDiffTool()
@@ -2700,12 +2703,17 @@ namespace GitUI.CommandsDialogs
             }
 
             var item = list.SelectedGitItem;
-            if (item == null)
+            if (item is null)
             {
                 return;
             }
 
             var fileName = _fullPathResolver.Resolve(item.Name);
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                return;
+            }
+
             UICommands.StartFileEditorDialog(fileName);
 
             UnstagedSelectionChanged(null, null);
@@ -3184,20 +3192,17 @@ namespace GitUI.CommandsDialogs
         {
             foreach (var item in list.SelectedItems)
             {
-                var fileNames = new StringBuilder();
-                fileNames.Append(_fullPathResolver.Resolve(item.Item.Name).ToNativePath());
-
-                string filePath = fileNames.ToString();
+                string filePath = _fullPathResolver.Resolve(item.Item.Name);
                 if (File.Exists(filePath))
                 {
-                    OsShellUtil.SelectPathInFileExplorer(filePath);
+                    OsShellUtil.SelectPathInFileExplorer(filePath.ToNativePath());
                 }
             }
         }
 
         private void stagedOpenDifftoolToolStripMenuItem9_Click(object sender, EventArgs e)
         {
-            OpenFilesWithDiffTool(Staged.SelectedItems.Items(), "HEAD", GitRevision.IndexGuid);
+            OpenFilesWithDiffTool(Staged.SelectedItems);
         }
 
         private void openFolderToolStripMenuItem10_Click(object sender, EventArgs e)
