@@ -3598,6 +3598,17 @@ namespace GitCommands
         }
 
         /// <summary>
+        /// Get the global editor known by Git
+        /// </summary>
+        /// <returns>the global editor</returns>
+        public async Task<string> GetCustomEditor()
+        {
+            var args = new GitArgumentBuilder("config") { "--global core.editor" };
+            string output = await _gitExecutable.GetOutputAsync(args);
+            return output;
+        }
+
+        /// <summary>
         /// Get a list of diff/merge tools known by Git
         /// </summary>
         /// <param name="isDiff">diff or merge</param>
